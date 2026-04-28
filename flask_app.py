@@ -7,11 +7,12 @@ from flask_login import login_required, login_user, logout_user, LoginManager, U
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
 
-
+# Enable debug mode
 app = Flask(__name__)
 app.config["DEBUG"] = True
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:////home/kr31/mysite/db/app.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
 
 app.secret_key = "if you know you know if not you do not"
 login_manager = LoginManager()
