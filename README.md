@@ -20,7 +20,7 @@ This pipeline handles:
 
 ## Architecture
 
-![Pipeline](diagrams/architecture.png)
+![architecture](diagrams/architecture.png)
 
 > 💡 **Architectural Note on security and auth — local agent:** 
 > This pipeline runs on a self-hosted Azure DevOps agent on the same machine as a Minikube cluster, so it uses the host's environment for authentication: a local `docker login` and the host's `kubectl` context.
@@ -263,12 +263,12 @@ Commit and push changes to `flask_app.py` or your frontend files in the `templat
 After committing your changes, the pipeline will automatically start running. 🔄
 
 ### 🛠️ Pipeline Started
-![Pipeline Running](screenshots/pipeline1.png)
+![Pipeline Running](screenshots/Pipeline1.png)
 
 ⏳ Wait a few more seconds (or minutes depending on the build) for the pipeline to complete.
 
 ### ✅ Pipeline Completed Successfully
-![Pipeline Success](screenshots/pipeline2.png)
+![Pipeline Success](screenshots/Pipeline2.png)
 
 🎉 Your Flask application has now been successfully built and deployed through the CI/CD pipeline!
 
