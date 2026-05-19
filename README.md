@@ -1,21 +1,20 @@
 # Azure DevOps Flask CI/CD Pipeline
 
-This project demonstrates a simple end-to-end CI/CD pipeline using Flask, Docker, Kubernetes, Minikube, DockerHub, and Azure DevOps.
+This project demonstrates an end-to-end multi-stage CI/CD pipeline using Flask, Docker, Kubernetes (Minikube), DockerHub, and Azure DevOps.
 
 ---
 
 ## Project Overview
 
-The application is containerized using Docker, pushed to DockerHub, and deployed into a Kubernetes cluster running on Minikube. Azure DevOps Pipelines automates the CI/CD workflow using a self-hosted local agent to build, push, and deploy the application.
+The application is containerized using Docker, pushed to DockerHub, and deployed into a Kubernetes cluster running on Minikube. Azure DevOps Pipelines automates the multi-stage CI/CD workflow using a self-hosted local agent to safely test, build, and dynamically deploy the application.
 
 This pipeline handles:
-
-✅ Build Automation
-✅ Docker Image Creation
-✅ DockerHub Push
-✅ Kubernetes Deployment
-✅ Continuous Delivery Workflow
-✅ Using of Local Agent
+✅ Fail-fast Build Automation  
+✅ Traceable Docker Image Creation  
+✅ DockerHub Push  
+✅ Cloud-Native Kubernetes Dynamic Deployments  
+✅ Multi-Stage Continuous Integration & Delivery Isolation  
+✅ Self-Hosted Local Agent Execution  
 
 ---
 
@@ -23,42 +22,46 @@ This pipeline handles:
 
 ![Pipeline](diagrams/architecture.png)
 
+> 💡 **Architectural Note on Security & Authentication:** 
+> Because this pipeline utilizes a self-hosted Azure DevOps agent running locally alongside the Minikube Kubernetes cluster, the agent naturally inherits the active host machine's environment. Therefore, cloud-based credential injection is bypassed in favor of a local `docker login` session and direct `kubectl` context sharing. Moving this authentication to a decoupled, credential-less cloud model is outlined in the Future Improvements.
+
 ## Prerequisites
 * Flask App
 * Docker
-* Kubernetes CLI (kubectl)
+* Kubernetes CLI (`kubectl`)
 * Minikube
-* Azure Devops Account
+* Azure DevOps Account
 * GitHub Account
-* DockerHub Account
-* Private Repo in DockerHub
+* DockerHub Account (Private Repository)
 
 ## Project Workflow
 1. Create Dockerfile and requirements.txt
-2. Build Docker image
-3. Push image to DockerHub
-4. Create Kubernetes namespace and secrets
-5. Create and Deploy deployment and service manifests
-6. Configure Azure DevOps self-hosted agent
-7. Create Azure Pipeline YAML
-8. Trigger automated pipeline
+2. Build Docker image with unique build numbers
+3. Push image tags to DockerHub
+4. Create Kubernetes namespace and image pull secrets
+5. Create and deploy deployment and service manifests
+6. Configure Azure DevOps self-hosted local agent
+7. Configure multi-stage Azure Pipeline YAML using `kubectl set image`
+8. Trigger automated pipeline rollouts
 
 ---
 
 ## Create Dockerfile and requirements.txt
 
-Create a docker
+Create a `Dockerfile`:
 
-```bash
+```dockerfile
 FROM python:3.13-alpine
 LABEL maintainer="YOUREMAIL@EMAIL.COM"
-COPY . /mysite
 WORKDIR /mysite
-RUN pip install -r requirements.txt
+
+# Leverage Docker layer caching for dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
 EXPOSE 5000
-# ENTRYPOINT ["python"]
-CMD ["python","flask_app.py"] 
-```
+CMD ["python","flask_app.py"]
 
 Create requirements.txt
 
@@ -87,7 +90,7 @@ docker images | grep flask
 docker login -u <username>
 
 # Push image to dockerhub
-docker push mkbmr/flask-app:v1
+docker push mkbmr/my-flask-app:v1
 ```
 
 ## Create Kubernetes Namespace and Secrets
@@ -106,7 +109,6 @@ kubectl create secret docker-registry regcred \
 # Verify secret
 kubectl -n flask-app get secret regcred -o yaml
 ```
-
 
 ## Create & Deploy deployment and service manifests
 
@@ -169,7 +171,7 @@ kubectl -n flask-app describe pod -l components=flask-demo-app
 kubectl get svc -n flask-app
 ```
 
-## Verify with Minikube
+## Verify Local Network routing with Minikube
 ```bash
 # Open another terminal tab and run minikube tunnel
 minikube tunnel
@@ -178,31 +180,25 @@ minikube tunnel
 kubectl get svc -n flask-app
 
 # Verify with Curl (or paste the IP and port into your web-browser)
-curl -v <External-IP>:<Port>
+curl -v <External-IP>:80
 ```
 
-**Keep it running so that we can test with the pipeline later. Ensure to make this work before proceeding to the next steps.**
+**Ensure the web application functions correctly here before proceeding to automated execution**
 
 ## Configure Azure DevOps self-hosted agent
 
-Here are guides to install self-hosted agents:
+Follow Microsoft's Official Documentation to initialize your local agent:
 
 * [Linux agent](https://learn.microsoft.com/en-us/azure/devops/pipelines/agents/linux-agent?view=azure-devops&tabs=IP-V4)
 * [macOS agent](https://learn.microsoft.com/en-us/azure/devops/pipelines/agents/osx-agent?view=azure-devops&tabs=IP-V4)
 * [Windows agent](https://learn.microsoft.com/en-us/azure/devops/pipelines/agents/windows-agent?view=azure-devops&tabs=IP-V4)
 
-**Ensure that agent is online before proceeding to the next step**
+**Ensure your agent pool indicates an `online` status before triggering the configuration block below.**
 
 
 ## Create Azure Pipeline YAML
 
-The Azure DevOps pipeline performs the following steps:
-
-* Check for syntax error in flask_app.py
-* Build Docker image
-* Push image to DockerHub
-* Update deployment image tags
-* Deploy application to Kubernetes
+The declarative multi-stage Azure DevOps pipeline separates Continuous Integration (CI) from Continuous Delivery (CD) to manage builds dynamically without mutating physical files via scripts, ensuring resilience against configuration drift.
 
 ```bash
 trigger:
@@ -211,74 +207,96 @@ trigger:
 pool:
   name: Agents
 
-steps:
-  - task: CmdLine@2
-    displayName: "Syntax check (fail fast)"
-    inputs:
-      script: |
-        python -m py_compile flask_app.py
+stages:
+  - stage: CI_Stage
+    displayName: "Build and Package"
+    jobs:
+      - job: BuildJob
+        steps:
+          - task: CmdLine@2
+            displayName: "Syntax check"
+            inputs:
+              script: python -m py_compile flask_app.py
 
-  - task: CmdLine@2
-    displayName: "Building Docker Image"
-    inputs:
-      script: |
-        docker build -t mkbmr/my-flask-app:$(Build.BuildNumber) .
+          - task: CmdLine@2
+            displayName: "Build Docker Image"
+            inputs:
+              script: docker build -t mkbmr/my-flask-app:$(Build.BuildNumber) .
 
-  - task: CmdLine@2
-    displayName: "Push Image"
-    inputs:
-      script: |
-        docker push mkbmr/my-flask-app:$(Build.BuildNumber)
+          - task: CmdLine@2
+            displayName: "Push Image to DockerHub"
+            inputs:
+              script: docker push mkbmr/my-flask-app:$(Build.BuildNumber)
 
-  - task: CmdLine@2
-    displayName: "Update Deployment Image tag"
-    inputs:
-      script: |
-        set -e
-        kubectl get namespace flask-app || kubectl create namespace flask-app
-        TAG=$(Build.BuildNumber)
-        sed -i "s|image: .*|image: mkbmr/my-flask-app:$TAG|g" deploy/flask-app-deployment.yaml
-        git --no-pager diff -- deploy/flask-app-deployment.yaml || true
+  - stage: CD_Stage
+    displayName: "Deploy to Minikube"
+    dependsOn: CI_Stage
+    condition: succeeded()
+    jobs:
+      - job: DeployJob
+        steps:
+          - task: CmdLine@2
+            displayName: "Update Manifest and Deploy"
+            inputs:
+              script: |
+                set -e
+                kubectl get namespace flask-app || kubectl create namespace flask-app
+                kubectl apply -f deploy/flask-app-service.yaml -n flask-app
+                kubectl apply -f deploy/flask-app-deployment.yaml -n flask-app
 
-  - task: CmdLine@2
-    displayName: "Applying Updated Manifest"
-    inputs:
-      script: |
-        kubectl apply -f deploy/flask-app-service.yaml -n flask-app
-        kubectl apply -f deploy/flask-app-deployment.yaml -n flask-app
-        kubectl rollout status deployment/flask-app -n flask-app --timeout=60s
+                # Update image dynamically
+                kubectl set image deployment/flask-app flask-demo-app=mkbmr/my-flask-app:$(Build.BuildNumber) -n flask-app
 
+                # Verify health
+                kubectl rollout status deployment/flask-app -n flask-app --timeout=60s
 ```
 
 ## Trigger Automated Pipeline
 
-Make changes to the flask_app.py or to any of the HTML files in the templates folder.
+Commit and push changes to `flask_app.py` or your frontend files in the `templates/` folder. Azure DevOps will automatically invoke the stages, update the running container image via the cluster API, and smoothly switch traffic over to the healthy pods.
 
-**If pipeline is successfull, changes made will be seen on the website after your pipeline task is completed.**
+## Day-2 Operations & Cluster Management
 
-If there are errors, click on the task jobs in the AzureDevops Pipeline page and see what are the errors.
+### Managing Scaling Demands
 
+To modify horizontal scaling manually via CLI:
+
+```bash
+# Scaling up the target deployment to 5 active replicas
+kubectl scale deployment/flask-app --replicas=5 -n flask-app
+
+# Watch the pods spinning up in real-timeout
+kubectl get pods -n flask-app -w
+```
+
+### Executing Instant Rollbacks
+
+If image are broken or corrupted, executing a rollback to the last working image
+
+```bash
+# Check history of rolling deployment revisions
+kubectl rollout history deployment/flask-app -n flask-app
+
+# Revert to last working image
+kubectl rollout undo deployment/flask-app -n flask-app
+
+# Confirm rollback completes health check successfully
+kubectl rollout status deployment/flask-app -n flask-app
+```
 
 ## Troubleshooting
 
-Common issues encountered during setup:
-
 ### ImagePullBackOff
 
-Usually caused by:
-* Incorrect DockerHub credentials
-* Missing Kubernetes secret
-* Incorrect image name or tag
+* Incorrect DockerHub credentials in the target namespace
+* Missing or misconfigured Kubernetes pull secret (regcred)
+* Typos in the repository prefix or tag formatting
 
 ### CrashLoopBackOff
 
-Usually caused by:
-
-* Flask application errors
-* Missing dependencies (eg missing requirements.txt)
-* incorrect container port configuration
-
-Check errors using the following commands:
+* Core Python runtime bugs or failures inside `flask_app.py`
+* Missing context dependencies within `requirements.txt`
+* Discrepancies between internal and external container's binding `EXPOSE`
 
 ```bash
 # Get all pod
@@ -291,21 +309,11 @@ kubectl -n flask-app describe pod -l components=flask-demo-app
 kubectl logs <pod-name> -n flask-app
 ```
 
-## Learning Outcome
-* CI/CD Fundamentals
-* Kubernetes Deployments
-* Docker Image Management
-* Azure DevOps Pipelines
-* Self-hosted Agents
-* Container Orchestration
-
 ## Future Improvements
-* Add Helm charts
-* Add GitHub Actions workflow
-* Add Ingress controller
-* Add monitoring with Prometheus and Grafana
-* Add automated rollback strategy
-* Add Terraform provisioning
+* GitHub Actions Portability: Implementing GitHub Actions
+* Secure Secret Management: Using service tokens as pipeline secrets
+* GitOps: Switch to Helm/Kustomize and let ArgoCD/Flux sync the cluster
+* Shift-left Sec: Run Trivy for security linting
 
 ## Author
 
