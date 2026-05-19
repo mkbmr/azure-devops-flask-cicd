@@ -64,7 +64,7 @@ EXPOSE 5000
 CMD ["python","flask_app.py"]
 ```
 
-Create requirements.txt
+Create 'requirements.txt'
 
 ```bash
 echo "flask==3.1.0" > requirements.txt
@@ -77,7 +77,7 @@ echo "flask==3.1.0" > requirements.txt
 minikube start
 
 # Build your image with tagging, (eg. <username>/<flask-app-name>:<tag>)
-docker build -t mkbmr/my-flask-app:v1-stable .
+docker build -t mkbmr/my-flask-app:v1-stable.
 
 # Verify image build
 docker images | grep flask
@@ -163,8 +163,8 @@ spec:
 Applying both manifest
 ```bash
 # Apply deployments
-kubectl apply -f flask-app-deployment.yaml
-kubectl apply -f flask-app-service.yaml
+kubectl apply -f deploy/flask-app-deployment.yaml
+kubectl apply -f deploy/flask-app-service.yaml
 
 # Verify deployments
 kubectl -n flask-app get pods -o wide

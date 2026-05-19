@@ -18,6 +18,6 @@ spec:
       containers:
         - name: flask-demo-app
           image: mkbmr/my-flask-app:v1-stable
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 5000
