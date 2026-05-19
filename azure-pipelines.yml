@@ -1,0 +1,48 @@
+trigger:
+  - main
+
+pool:
+  name: Agents
+
+stages:
+  - stage: CI_Stage
+    displayName: "Build and Package"
+    jobs:
+      - job: BuildJob
+        steps:
+          - task: CmdLine@2
+            displayName: "Syntax check"
+            inputs:
+              script: python -m py_compile flask_app.py
+
+          - task: CmdLine@2
+            displayName: "Build Docker Image"
+            inputs:
+              script: docker build -t mkbmr/my-flask-app:$(Build.BuildNumber) .
+
+          - task: CmdLine@2
+            displayName: "Push Image to DockerHub"
+            inputs:
+              script: docker push mkbmr/my-flask-app:$(Build.BuildNumber)
+
+  - stage: CD_Stage
+    displayName: "Deploy to Minikube"
+    dependsOn: CI_Stage
+    condition: succeeded()
+    jobs:
+      - job: DeployJob
+        steps:
+          - task: CmdLine@2
+            displayName: "Update Manifest and Deploy"
+            inputs:
+              script: |
+                set -e
+                kubectl get namespace flask-app || kubectl create namespace flask-app
+                kubectl apply -f deploy/flask-app-service.yaml -n flask-app
+                kubectl apply -f deploy/flask-app-deployment.yaml -n flask-app
+
+                # Update image dynamically
+                kubectl set image deployment/flask-app flask-demo-app=mkbmr/my-flask-app:$(Build.BuildNumber) -n flask-app
+
+                # Verify health
+                kubectl rollout status deployment/flask-app -n flask-app --timeout=60s
