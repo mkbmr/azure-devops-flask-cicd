@@ -52,7 +52,7 @@ Create a `Dockerfile`:
 
 ```dockerfile
 FROM python:3.13-alpine
-LABEL maintainer="YOUREMAIL@EMAIL.COM"
+LABEL maintainer="khalisilahk@gmail.com"
 WORKDIR /mysite
 
 # Leverage Docker layer caching for dependencies
@@ -77,7 +77,7 @@ echo "flask==3.1.0" > requirements.txt
 minikube start
 
 # Build your image with tagging, (eg. <username>/<flask-app-name>:<tag>)
-docker build -t mkbmr/my-flask-app:v1 .
+docker build -t mkbmr/my-flask-app:v1-stable .
 
 # Verify image build
 docker images | grep flask
@@ -113,7 +113,7 @@ kubectl -n flask-app get secret regcred -o yaml
 
 ## Create & Deploy deployment and service manifests
 
-Create your deployment.yaml and service.yaml
+Create your deployment.yaml and service.yaml inside deploy folder
 
 flask-app-deployment.yaml
 ```bash
@@ -136,7 +136,7 @@ spec:
         - name: regcred
       containers:
         - name: flask-demo-app
-          image: mkbmr/my-flask-app:v1
+          image: mkbmr/my-flask-app:v1-stable
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000

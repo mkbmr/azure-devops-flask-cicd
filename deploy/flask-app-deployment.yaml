@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-app
+  namespace: flask-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      components: flask-demo-app
+  template:
+    metadata:
+      labels:
+        components: flask-demo-app
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      containers:
+        - name: flask-demo-app
+          image: mkbmr/my-flask-app:v1-stable
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
