@@ -52,7 +52,7 @@ Create a `Dockerfile`:
 
 ```dockerfile
 FROM python:3.13-alpine
-LABEL maintainer="khalisilahk@gmail.com"
+LABEL maintainer="YOUR_EMAIL"
 WORKDIR /mysite
 
 # Leverage Docker layer caching for dependencies
@@ -81,6 +81,9 @@ docker build -t mkbmr/my-flask-app:v1-stable.
 
 # Verify image build
 docker images | grep flask
+
+# Test Image locally
+docker run --rm -p5000:5000 mkbmr/my-flask-app:v1-stable
 
 ```
 
@@ -158,7 +161,6 @@ spec:
       port: 80
       targetPort: 5000
 ```
-
 
 Applying both manifest
 ```bash
@@ -255,6 +257,20 @@ stages:
 ## Trigger Automated Pipeline
 
 Commit and push changes to `flask_app.py` or your frontend files in the `templates/` folder. Azure DevOps will automatically invoke the stages, update the running container image via the cluster API, and smoothly switch traffic over to the healthy pods.
+
+## 🚀 CI/CD Pipeline in Action
+
+After committing your changes, the pipeline will automatically start running. 🔄
+
+### 🛠️ Pipeline Started
+![Pipeline Running](screenshots/pipeline1.png)
+
+⏳ Wait a few more seconds (or minutes depending on the build) for the pipeline to complete.
+
+### ✅ Pipeline Completed Successfully
+![Pipeline Success](screenshots/pipeline2.png)
+
+🎉 Your Flask application has now been successfully built and deployed through the CI/CD pipeline!
 
 ## Day-2 Operations & Cluster Management
 
