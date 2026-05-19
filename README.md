@@ -64,7 +64,7 @@ EXPOSE 5000
 CMD ["python","flask_app.py"]
 ```
 
-Create 'requirements.txt'
+Create `requirements.txt`:
 
 ```bash
 echo "flask==3.1.0" > requirements.txt
@@ -193,7 +193,7 @@ curl -v <External-IP>:80
 Follow Microsoft's Official Documentation to initialize your local agent:
 
 * [Linux agent](https://learn.microsoft.com/en-us/azure/devops/pipelines/agents/linux-agent?view=azure-devops&tabs=IP-V4)
-* [macOS agent](https://learn.microsoft.com/en-us/azure/devops/pipelines/agents/osx-agent?view=azure-devops&tabs=IP-V4)
+* [MacOS agent](https://learn.microsoft.com/en-us/azure/devops/pipelines/agents/osx-agent?view=azure-devops&tabs=IP-V4)
 * [Windows agent](https://learn.microsoft.com/en-us/azure/devops/pipelines/agents/windows-agent?view=azure-devops&tabs=IP-V4)
 
 **Ensure your agent pool indicates an `online` status before triggering the configuration block below.**
