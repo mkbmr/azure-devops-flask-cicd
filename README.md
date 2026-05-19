@@ -8,7 +8,7 @@ This project demonstrates an end-to-end multi-stage CI/CD pipeline using Flask, 
 
 The application is containerized using Docker, pushed to DockerHub, and deployed into a Kubernetes cluster running on Minikube. Azure DevOps Pipelines automates the multi-stage CI/CD workflow using a self-hosted local agent to safely test, build, and dynamically deploy the application.
 
-This pipeline handles:
+This pipeline handles:  
 ✅ Fail-fast Build Automation  
 ✅ Traceable Docker Image Creation  
 ✅ DockerHub Push  
@@ -22,8 +22,8 @@ This pipeline handles:
 
 ![Pipeline](diagrams/architecture.png)
 
-> 💡 **Architectural Note on Security & Authentication:** 
-> Because this pipeline utilizes a self-hosted Azure DevOps agent running locally alongside the Minikube Kubernetes cluster, the agent naturally inherits the active host machine's environment. Therefore, cloud-based credential injection is bypassed in favor of a local `docker login` session and direct `kubectl` context sharing. Moving this authentication to a decoupled, credential-less cloud model is outlined in the Future Improvements.
+> 💡 **Architectural Note on security and auth — local agent:** 
+> This pipeline runs on a self-hosted Azure DevOps agent on the same machine as a Minikube cluster, so it uses the host's environment for authentication: a local `docker login` and the host's `kubectl` context.
 
 ## Prerequisites
 * Flask App
@@ -62,6 +62,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 EXPOSE 5000
 CMD ["python","flask_app.py"]
+```
 
 Create requirements.txt
 
