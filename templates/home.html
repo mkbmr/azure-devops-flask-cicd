@@ -1,78 +1,713 @@
 <!doctype html>
-<html>
+<html lang="en">
     <head>
-        <meta charset="utf-8" />
-        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-        <link
-            rel="stylesheet"
-            href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css"
-            integrity="sha512-dTfge/zgoMYpP7QbHy4gWMEGsbsdZeCXz7irItjcC3sPUFtf0kuFbDz/ixG7ArTxmDjLXDmezHubeNikyKGVyQ=="
-            crossorigin="anonymous"
-        />
-
-        <title>Khalis | Home</title>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>GitHub - Khalis (DevOps Portfolio)</title>
         <style>
-            img {
-                border-radius: 50%;
+            /* GitHub Dark Mode Palette Reset */
+            body {
+                font-family:
+                    -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica,
+                    Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+                background-color: #0d1117; /* Main GitHub dark canvas */
+                color: #c9d1d9; /* Standard text light gray */
+                margin: 0;
+                padding: 0;
+                display: flex;
+                min-height: 100vh;
             }
 
-            .right {
-                float: right;
-                width: 500px;
+            /* LEFT SIDEBAR: EXPANDABLE DRAWER */
+            .gh-sidebar {
+                width: 260px;
+                background-color: #161b22; /* Slightly darker panel */
+                border-right: 1px solid #30363d;
+                display: flex;
+                flex-direction: column;
+                user-select: none;
+
+                position: fixed;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                z-index: 20; /* High z-index to overlay content when open */
+
+                /* Drawer behavior: hidden by default via transform */
+                transform: translateX(-100%);
+                transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            /* State class when drawer is pulled open */
+            .gh-sidebar.drawer-open {
+                transform: translateX(0);
+            }
+
+            .sidebar-header {
+                padding: 16px 20px;
+                border-bottom: 1px solid #30363d;
+                color: #f0f6fc;
+                font-size: 14px;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            }
+
+            /* Close Button inside Drawer */
+            .drawer-close-btn {
+                background: none;
+                border: none;
+                color: #8b949e;
+                font-size: 16px;
+                cursor: pointer;
+                padding: 4px 8px;
+                border-radius: 6px;
+            }
+            .drawer-close-btn:hover {
+                color: #f0f6fc;
+                background-color: #21262d;
+            }
+
+            .tree-container {
+                padding: 20px;
+                font-family:
+                    ui-monospace,
+                    SFMono-Regular,
+                    SF Mono,
+                    Menlo,
+                    Consolas,
+                    Liberation Mono,
+                    monospace;
+                font-size: 13px;
+                flex: 1;
+                overflow-y: auto;
+            }
+
+            .tree-group-title {
+                text-transform: uppercase;
+                font-size: 11px;
+                color: #8b949e;
+                font-weight: bold;
+                margin: 15px 0 6px 0;
+                letter-spacing: 0.5px;
+            }
+            .tree-group-title:first-child {
+                margin-top: 0;
+            }
+
+            .tree-link {
+                display: block;
+                padding: 6px 0;
+                color: #8b949e;
+                text-decoration: none;
+                white-space: pre;
+            }
+            .tree-link:hover {
+                color: #58a6ff;
+            }
+            .tree-link.active {
+                color: #58a6ff;
+                font-weight: 600;
+            }
+
+            /* DRAWER BACKDROP MASK */
+            .drawer-backdrop {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 15;
+                display: none;
+                opacity: 0;
+                transition: opacity 0.25s ease;
+            }
+            .drawer-backdrop.show {
+                display: block;
+                opacity: 1;
+            }
+
+            /* RIGHT PANEL: MAIN GITHUB PROFILE HUB */
+            .gh-main {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                margin-left: 0;
+                min-width: 0;
+            }
+
+            /* GLOBAL TOP BAR */
+            .gh-top-navigation {
+                background-color: #161b22;
+                padding: 12px 24px;
+                border-bottom: 1px solid #30363d;
+                font-size: 14px;
+                color: #f0f6fc;
+                font-weight: 500;
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                display: flex;
+                align-items: center;
+                gap: 16px;
+            }
+
+            /* Interactive Hamburger Toggle Menu Icon Button */
+            .drawer-toggle-btn {
+                background-color: #21262d;
+                border: 1px solid #30363d;
+                border-radius: 6px;
+                color: #c9d1d9;
+                padding: 5px 10px;
+                cursor: pointer;
+                font-size: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .drawer-toggle-btn:hover {
+                background-color: #30363d;
+                border-color: #8b949e;
+                color: #f0f6fc;
+            }
+
+            /* NATURAL PROFILE CANVAS (SCROLLS WITH PAGE) */
+            .gh-profile-canvas {
+                padding: 40px;
+                max-width: 1012px;
+                width: 100%;
+                box-sizing: border-box;
+                margin: 0 auto;
+                display: grid;
+                grid-template-columns: 260px 1fr;
+                gap: 32px;
+            }
+
+            @media (max-width: 850px) {
+                .gh-profile-canvas {
+                    grid-template-columns: 1fr;
+                    padding: 20px;
+                }
+            }
+
+            /* COLUMN 1: INTERACTIVE USER SOCIAL PROFILE */
+            .gh-profile-card {
+                display: flex;
+                flex-direction: column;
+            }
+
+            @media (min-width: 851px) {
+                .gh-profile-card {
+                    position: sticky;
+                    top: 90px;
+                    height: max-content;
+                }
+            }
+
+            .avatar-placeholder {
+                width: 100%;
+                aspect-ratio: 1;
+                background-color: #30363d;
+                border: 1px solid #30363d;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 48px;
+                color: #8b949e;
+                margin-bottom: 16px;
+            }
+
+            .user-name {
+                font-size: 24px;
+                font-weight: 600;
+                color: #f0f6fc;
+                line-height: 1.25;
+            }
+
+            .user-handle {
+                font-size: 20px;
+                font-weight: 300;
+                color: #8b949e;
+                margin-bottom: 16px;
+            }
+
+            .user-bio {
+                font-size: 14px;
+                color: #c9d1d9;
+                margin-bottom: 16px;
+                line-height: 1.5;
+            }
+
+            .social-list {
+                list-style: none;
+                padding: 0;
+                margin: 16px 0 0 0;
+                border-top: 1px solid #21262d;
+                padding-top: 16px;
+            }
+
+            .social-item {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 14px;
+                color: #c9d1d9;
+                margin-bottom: 12px;
+            }
+
+            .social-item a {
+                color: #c9d1d9;
+                text-decoration: none;
+            }
+            .social-item a:hover {
+                color: #58a6ff;
+                text-decoration: underline;
+            }
+
+            .reply-notice {
+                font-size: 12px;
+                color: #8b949e;
+                font-style: italic;
+                margin-top: 12px;
+            }
+
+            /* COLUMN 2: GITHUB PROFILE CONTENT AREA */
+            .gh-content-pane {
+                display: flex;
+                flex-direction: column;
+            }
+
+            /* ABOUT ME PINNED SECTION */
+            .readme-box {
+                background-color: #0d1117;
+                border: 1px solid #30363d;
+                border-radius: 6px;
+                padding: 24px;
+                margin-bottom: 24px;
+                scroll-margin-top: 80px;
+            }
+
+            .readme-header {
+                font-size: 12px;
+                color: #8b949e;
+                border-bottom: 1px solid #21262d;
+                padding-bottom: 8px;
+                margin-bottom: 16px;
+                font-family: monospace;
+            }
+
+            .readme-box h2 {
+                font-size: 20px;
+                color: #f0f6fc;
+                margin-top: 0;
+                margin-bottom: 12px;
+            }
+
+            .readme-box p {
+                font-size: 14px;
+                line-height: 1.6;
+                margin: 0 0 16px 0;
+            }
+
+            /* REPOSITORY GRID SECTION */
+            .section-title {
+                font-size: 16px;
+                font-weight: 600;
+                color: #f0f6fc;
+                margin: 32px 0 16px 0;
+                border-bottom: 1px solid #21262d;
+                padding-bottom: 8px;
+            }
+
+            .repo-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 16px;
+            }
+
+            @media (max-width: 650px) {
+                .repo-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            .repo-card {
+                background-color: #161b22;
+                border: 1px solid #30363d;
+                border-radius: 6px;
+                padding: 16px;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                scroll-margin-top: 80px;
+            }
+
+            .repo-title-row {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 8px;
+            }
+
+            .repo-link {
+                color: #58a6ff;
+                text-decoration: none;
+                font-weight: 600;
+                font-size: 14px;
+            }
+            .repo-link:hover {
+                text-decoration: underline;
+            }
+
+            .repo-badge {
+                font-size: 12px;
+                border: 1px solid #30363d;
+                padding: 2px 7px;
+                border-radius: 2rem;
+                color: #8b949e;
+                background-color: #0d1117;
+            }
+
+            .repo-desc {
+                font-size: 12px;
+                color: #8b949e;
+                line-height: 1.5;
+                margin: 0 0 16px 0;
+            }
+
+            .repo-meta-row {
+                display: flex;
+                gap: 16px;
+                font-size: 12px;
+                color: #8b949e;
+                align-items: center;
+            }
+
+            .lang-dot {
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                display: inline-block;
+                vertical-align: middle;
+                margin-right: 4px;
+            }
+
+            .tech-category-block {
+                margin-bottom: 16px;
+            }
+
+            .tech-category-title {
+                font-size: 12px;
+                font-weight: 600;
+                color: #8b949e;
+                margin-bottom: 6px;
+                text-transform: uppercase;
+            }
+
+            .tech-tag {
+                display: inline-block;
+                background-color: #1f6feb;
+                color: #ffffff;
+                font-size: 11px;
+                padding: 2px 8px;
+                border-radius: 20px;
+                margin: 2px;
+                font-weight: 500;
+            }
+            .tech-tag.sec {
+                background-color: #da3633;
+            }
+            .tech-tag.cloud {
+                background-color: #238636;
+            }
+            .tech-tag.tool {
+                background-color: #8957e5;
             }
         </style>
     </head>
     <body>
-        <nav class="navbar navbar-inverse">
-            <div class="container">
-                <div class="navbar-header">
-                    <button
-                        type="button"
-                        class="navbar-toggle collapsed"
-                        data-toggle="collapse"
-                        data-target="#navbar"
-                        aria-expanded="false"
-                        aria-controls="navbar"
-                    >
-                        <span class="sr-only">Toggle navigation</span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                    </button>
-                    <a class="navbar-brand" href="#">Home</a>
-                    <a class="navbar-brand" href="/projects">Projects</a>
-                    <a class="navbar-brand" href="#">Contact</a>
+        <div class="drawer-backdrop" id="backdrop"></div>
+
+        <div class="gh-sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <span>📁 workspace / portfolio</span>
+                <button class="drawer-close-btn" id="closeDrawerBtn">✕</button>
+            </div>
+            <div class="tree-container">
+                <div class="tree-group-title">Overview Mesh</div>
+                <a href="#about" class="tree-link active">📄 README.md</a>
+                <a href="#skills" class="tree-link">📄 technical_skills.json</a>
+
+                <div class="tree-group-title">Featured Projects</div>
+                <a href="#project1" class="tree-link"
+                    >└── 📦 azure-devops-flask-cicd</a
+                >
+            </div>
+        </div>
+
+        <div class="gh-main">
+            <div class="gh-top-navigation">
+                <button
+                    class="drawer-toggle-btn"
+                    id="toggleDrawerBtn"
+                    title="Open workspace navigation tree"
+                >
+                    ☰
+                </button>
+                <div>mkbmr / <strong>Profile Dashboard</strong></div>
+            </div>
+
+            <div class="gh-profile-canvas">
+                <div class="gh-profile-card">
+                    <div class="avatar-placeholder">👨‍💻</div>
+                    <div class="user-name">Khalis Ruzli</div>
+                    <div class="user-handle">mkbmr</div>
+                    <div class="user-bio">
+                        Mid-career professional transitioning into DevOps.
+                        Passionate about solving complex problems and building
+                        highly reliable, secure systems.
+                    </div>
+
+                    <ul class="social-list">
+                        <li class="social-item">
+                            📧
+                            <a href="mailto:khalisilahk@gmail.com"
+                                >khalisilahk@gmail.com</a
+                            >
+                        </li>
+                        <li class="social-item">
+                            💼
+                            <a
+                                href="https://linkedin.com/in/khalisruzli"
+                                target="_blank"
+                                >LinkedIn</a
+                            >
+                        </li>
+                        <li class="social-item">
+                            🌐
+                            <a href="https://github.com/mkbmr" target="_blank"
+                                >GitHub</a
+                            >
+                        </li>
+                        <li class="social-item">
+                            🐦 <a href="#" target="_blank">Twitter</a>
+                        </li>
+                        <li class="social-item">
+                            💻 <a href="#" target="_blank">Dev.to</a>
+                        </li>
+                        <li class="social-item">
+                            📄
+                            <a
+                                href="Khalis Resume(PDF)"
+                                download
+                                style="color: #58a6ff; font-weight: 600"
+                                >Download Resume (PDF)</a
+                            >
+                        </li>
+                    </ul>
+                    <div class="reply-notice">
+                        I typically reply within 48 hours.
+                    </div>
+                </div>
+
+                <div class="gh-content-pane">
+                    <div class="readme-box" id="about">
+                        <div class="readme-header">mkbmr / README.md</div>
+                        <h2>Hi there, I'm Khalis Ruzli! 👋</h2>
+                        <p>
+                            I build reliable infrastructure and automation
+                            platforms with a sharp focus on end-to-end
+                            observability. As a professional making a
+                            target-driven transition into DevOps engineering, I
+                            am currently leveling up my hands-on knowledge in
+                            Kubernetes environments and infrastructure-as-code
+                            engineering best practices.
+                        </p>
+                    </div>
+
+                    <div class="readme-box" id="skills">
+                        <div class="readme-header">technical_skills.json</div>
+                        <h2>🛠️ Environment Core Dependencies</h2>
+                        <div style="margin-top: 15px">
+                            <div class="tech-category-block">
+                                <div class="tech-category-title">
+                                    Programming & Scripting
+                                </div>
+                                <span class="tech-tag">Python</span>
+                                <span class="tech-tag">Bash</span>
+                                <span class="tech-tag">PowerShell</span>
+                            </div>
+
+                            <div class="tech-category-block">
+                                <div class="tech-category-title">
+                                    Cloud Platforms & Infrastructure
+                                </div>
+                                <span class="tech-tag cloud"
+                                    >Microsoft Azure</span
+                                >
+                                <span class="tech-tag cloud"
+                                    >Terraform (IaC)</span
+                                >
+                            </div>
+
+                            <div class="tech-category-block">
+                                <div class="tech-category-title">
+                                    CI/CD & Automation Ecosystems
+                                </div>
+                                <span class="tech-tag tool">Azure DevOps</span>
+                                <span class="tech-tag tool">Jenkins</span>
+                                <span class="tech-tag tool"
+                                    >GitHub Actions</span
+                                >
+                            </div>
+
+                            <div class="tech-category-block">
+                                <div class="tech-category-title">
+                                    Containers & Systems
+                                </div>
+                                <span class="tech-tag">Docker</span>
+                                <span class="tech-tag"
+                                    >Kubernetes (Lab & Security Analysis)</span
+                                >
+                                <span class="tech-tag"
+                                    >Linux (Ubuntu / Red Hat)</span
+                                >
+                            </div>
+
+                            <div class="tech-category-block">
+                                <div class="tech-category-title">
+                                    Security, Analysis & Observability
+                                </div>
+                                <span class="tech-tag sec">ELK Stack</span>
+                                <span class="tech-tag sec">Syslog</span>
+                                <span class="tech-tag sec">Wireshark</span>
+                                <span class="tech-tag sec">Symantec DLP</span>
+                                <span class="tech-tag sec">Cisco IronPort</span>
+                                <span class="tech-tag sec"
+                                    >Threat Detection</span
+                                >
+                                <span class="tech-tag sec"
+                                    >Malware Analysis</span
+                                >
+                            </div>
+
+                            <div class="tech-category-block">
+                                <div class="tech-category-title">
+                                    Databases & Tools
+                                </div>
+                                <span class="tech-tag">MySQL</span>
+                                <span class="tech-tag">PostgreSQL</span>
+                                <span class="tech-tag">Git / GitHub</span>
+                                <span class="tech-tag tool">JIRA</span>
+                                <span class="tech-tag tool">ServiceNow</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-title">Pinned DevOps Repositories</div>
+                    <div class="repo-grid">
+                        <div
+                            class="repo-card"
+                            id="project1"
+                            style="grid-column: span 2"
+                        >
+                            <div>
+                                <div class="repo-title-row">
+                                    <a
+                                        href="https://github.com/mkbmr/azure-devops-flask-cicd"
+                                        target="_blank"
+                                        class="repo-link"
+                                        >azure-devops-flask-cicd</a
+                                    >
+                                    <span class="repo-badge">Public</span>
+                                </div>
+                                <p class="repo-desc">
+                                    Automated continuous integration and
+                                    deployment architecture leveraging Azure
+                                    DevOps delivery pipelines to build, test,
+                                    and dynamically ship functional Python Flask
+                                    web applications into isolated target
+                                    runtime environments.
+                                </p>
+                            </div>
+                            <div class="repo-meta-row">
+                                <span
+                                    ><span
+                                        class="lang-dot"
+                                        style="background-color: #3572a5"
+                                    ></span
+                                    >Python / Azure Pipelines</span
+                                >
+                                <span>⭐ 1</span>
+                                <span>📦 DevOps Architecture</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </nav>
-
-        <div style="text-align: center">
-            <table align="center" cellspacing="12" style="margin: 0 auto">
-                <tr>
-                    <td valign="middle">
-                        <a href="https://www.linkedin.com/in/khalisruzli/">
-                            <img
-                                src="/static/kr.jpg"
-                                href="alt"
-                                ="avatar"
-                                width="200"
-                                height="200"
-                                style="display: block"
-                            />
-                        </a>
-                    </td>
-                    <td valign="middle" align="left">
-                        <h2 style="margin: 0">Hi, I'm Khalis Ruzli!</h2>
-                        <p style="margin: 6px 0 0">
-                            A mid-career professional transitioning into
-                            DevOps.<br />I love solving problems and building
-                            reliable systems.
-                        </p>
-                    </td>
-                </tr>
-            </table>
         </div>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", () => {
+                const sidebar = document.getElementById("sidebar");
+                const backdrop = document.getElementById("backdrop");
+                const toggleBtn = document.getElementById("toggleDrawerBtn");
+                const closeBtn = document.getElementById("closeDrawerBtn");
+                const treeLinks = document.querySelectorAll(".tree-link");
+
+                if (!sidebar || !toggleBtn) {
+                    console.error(
+                        "Layout Error: Essential elements missing from DOM.",
+                    );
+                    return;
+                }
+
+                // Open Drawer Engine
+                function openDrawer(e) {
+                    if (e) e.preventDefault();
+                    sidebar.classList.add("drawer-open");
+                    backdrop.classList.add("show");
+                }
+
+                // Close Drawer Engine
+                function closeDrawer() {
+                    sidebar.classList.remove("drawer-open");
+                    backdrop.classList.remove("show");
+                }
+
+                // Global Window Triggers
+                toggleBtn.addEventListener("click", openDrawer);
+                if (closeBtn) closeBtn.addEventListener("click", closeDrawer);
+                if (backdrop) backdrop.addEventListener("click", closeDrawer);
+
+                // Active tracking + automated smooth slide navigation on tree items
+                treeLinks.forEach((link) => {
+                    link.addEventListener("click", function (e) {
+                        treeLinks.forEach((item) =>
+                            item.classList.remove("active"),
+                        );
+                        this.classList.add("active");
+
+                        const targetId = this.getAttribute("href");
+                        if (targetId && targetId.startsWith("#")) {
+                            const targetElement =
+                                document.querySelector(targetId);
+                            if (targetElement) {
+                                // Ensure standard smooth navigation execution
+                                targetElement.scrollIntoView({
+                                    behavior: "smooth",
+                                });
+                            }
+                        }
+
+                        // Dismiss the drawer overlay immediately upon click tracking
+                        closeDrawer();
+                    });
+                });
+            });
+        </script>
     </body>
 </html>
