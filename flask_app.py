@@ -13,6 +13,7 @@ def index():
 
 @app.route("/home")
 def home():
+    go here =
     return render_template("home.html")
 
 
